@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Backpack, Droplets, Sprout, User, Settings, MessageCircle, Coins, Gem, Info, X, Wheat, Axe, Shield, Box, Sparkles, Dog, Map, Fence, Hammer } from 'lucide-react';
+import { Backpack, Droplets, Sprout, User, Settings, MessageCircle, Coins, Gem, Info, X, Wheat, Axe, Shield, Box, Sparkles, Dog, Map, Fence, Hammer, Flower2, TreePine, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -28,9 +28,9 @@ const ITEMS = {
     { id: 'f3', name: '神奇肥料', type: 'fertilizer', costG: 100, costD: 5, bonus: '产量+50%，有几率产出钻石' },
   ],
   seeds: [
-    { id: 's1', name: '小麦种子', type: 'seeds', costG: 5, costD: 0, bonus: '成熟快，基础收益', level: 1, yieldG: 15, yieldD: 0, time: 3000 },
-    { id: 's2', name: '玫瑰种子', type: 'seeds', costG: 30, costD: 0, bonus: '观赏性强，中等收益', level: 2, yieldG: 80, yieldD: 0, time: 8000 },
-    { id: 's3', name: '摇钱树种', type: 'seeds', costG: 150, costD: 5, bonus: '生长极慢，高几率产出钻石', level: 3, yieldG: 400, yieldD: 3, time: 15000 },
+    { id: 's1', name: '小麦种子', type: 'seeds', costG: 5, costD: 0, bonus: '成熟快，基础收益', level: 1, yieldG: 15, yieldD: 0, time: 3000, icon: <Wheat size={32} className="text-yellow-400 drop-shadow-md animate-bounce" /> },
+    { id: 's2', name: '玫瑰种子', type: 'seeds', costG: 30, costD: 0, bonus: '观赏性强，中等收益', level: 2, yieldG: 80, yieldD: 0, time: 8000, icon: <Flower2 size={32} className="text-red-400 drop-shadow-md animate-pulse" /> },
+    { id: 's3', name: '摇钱树种', type: 'seeds', costG: 150, costD: 5, bonus: '生长极慢，高几率产出钻石', level: 3, yieldG: 400, yieldD: 3, time: 15000, icon: <TreePine size={32} className="text-emerald-400 drop-shadow-md animate-bounce" /> },
   ],
   harvest: [
     { id: 'h1', name: '破旧镰刀', type: 'harvest', costG: 5, costD: 0, bonus: '只能收割1级作物', maxLevel: 1 },
@@ -42,6 +42,12 @@ const ITEMS = {
     { id: 'm2', name: '丰收号角', type: 'magic', costG: 300, costD: 5, bonus: '所有作物立即成熟', effect: 'instant_all' },
   ]
 };
+
+const SOILS = [
+  { id: 'soil1', name: '普通土壤', color: '#8D6E63', borderColor: '#5D4037', speedBonus: 1, unlocked: true, costG: 0, costD: 0, reqLevel: 1 },
+  { id: 'soil2', name: '肥沃黑土', color: '#4E342E', borderColor: '#3E2723', speedBonus: 1.2, unlocked: false, costG: 500, costD: 0, reqLevel: 5 },
+  { id: 'soil3', name: '神奇红土', color: '#D84315', borderColor: '#BF360C', speedBonus: 1.5, unlocked: false, costG: 2000, costD: 10, reqLevel: 10 },
+];
 
 export default function App() {
   // --- STATE ---
@@ -59,6 +65,9 @@ export default function App() {
   
   // Soil grid: 16 plots
   const [plots, setPlots] = useState(Array(16).fill({ state: 'empty', plantId: null, plantedAt: 0 }));
+  const [unlockedSoils, setUnlockedSoils] = useState<string[]>(['soil1']);
+  const [currentSoilIndex, setCurrentSoilIndex] = useState(0);
+  const currentSoil = SOILS[currentSoilIndex];
   
   // Chat & UI
   const [isChatting, setIsChatting] = useState(false);
@@ -149,6 +158,7 @@ export default function App() {
       setPlots(newPlots);
       
       // Simulate growth
+      const growthTime = (selectedTool.time || 3000) / currentSoil.speedBonus;
       setTimeout(() => {
         setPlots(prev => {
           const p = [...prev];
@@ -157,7 +167,7 @@ export default function App() {
           }
           return p;
         });
-      }, selectedTool.time || 3000);
+      }, growthTime);
       return;
     }
 
@@ -248,6 +258,28 @@ export default function App() {
     setDetailItem(null);
   };
 
+  const handlePrevSoil = () => {
+    setCurrentSoilIndex(prev => (prev > 0 ? prev - 1 : SOILS.length - 1));
+  };
+
+  const handleNextSoil = () => {
+    setCurrentSoilIndex(prev => (prev < SOILS.length - 1 ? prev + 1 : 0));
+  };
+
+  const handleUnlockSoil = () => {
+    if (stats.level < currentSoil.reqLevel) {
+      showToast(`需要农场等级达到 Lv.${currentSoil.reqLevel} 才能解锁！`);
+      return;
+    }
+    if (stats.gold >= currentSoil.costG && stats.diamond >= currentSoil.costD) {
+      setStats(s => ({ ...s, gold: s.gold - currentSoil.costG, diamond: s.diamond - currentSoil.costD }));
+      setUnlockedSoils(prev => [...prev, currentSoil.id]);
+      showToast(`成功解锁 ${currentSoil.name}!`);
+    } else {
+      showToast("金币或钻石不足！");
+    }
+  };
+
   return (
     <div className="relative w-full h-screen bg-[#8BC34A] overflow-hidden select-none font-sans flex flex-col">
       {/* Grass Pattern */}
@@ -268,7 +300,7 @@ export default function App() {
               <img src="https://picsum.photos/seed/user1/100/100" alt="User 1" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
             </div>
             <div className="flex flex-col justify-center flex-1">
-              <div className="text-white text-xs font-bold drop-shadow-md truncate">Lv.{stats.level} 农场主</div>
+              <div className="text-white text-xs font-bold drop-shadow-md truncate">{"{{user}}"}</div>
               <div className="w-full h-1.5 bg-black/30 rounded-full mt-1 overflow-hidden">
                 <div className="h-full bg-[#8BC34A]" style={{ width: `${(stats.exp / stats.maxExp) * 100}%` }} />
               </div>
@@ -303,7 +335,7 @@ export default function App() {
               <img src="https://picsum.photos/seed/user2/100/100" alt="User 2" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
             </div>
             <div className="flex flex-col justify-center items-end flex-1">
-              <div className="text-white text-xs font-bold drop-shadow-md truncate">Lv.{stats.level} 伴侣</div>
+              <div className="text-white text-xs font-bold drop-shadow-md truncate">{"{{char}}"}</div>
               <div className="w-full h-1.5 bg-black/30 rounded-full mt-1 overflow-hidden flex justify-end">
                 <div className="h-full bg-[#8BC34A]" style={{ width: `${(stats.exp / stats.maxExp) * 100}%` }} />
               </div>
@@ -313,21 +345,38 @@ export default function App() {
       </div>
 
       {/* Center: Farm Land (Soil Grid) */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[92vw] sm:max-w-md z-0">
-        <div className="grid grid-cols-4 gap-2 sm:gap-3 p-3 sm:p-4 bg-[#5D4037]/30 rounded-2xl backdrop-blur-sm border border-white/10 shadow-xl">
-          {plots.map((plot, i) => (
-            <div 
-              key={i} 
-              onClick={() => handlePlotClick(i)}
-              className="aspect-square bg-[#8D6E63] rounded-xl border-b-[6px] border-[#5D4037] shadow-inner relative overflow-hidden cursor-pointer hover:brightness-110 active:border-b-2 active:translate-y-1 transition-all flex items-center justify-center"
-            >
-              <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#3E2723 1.5px, transparent 1.5px)', backgroundSize: '8px 8px' }} />
-              
-              {/* Plant Visuals */}
-              {plot.state === 'growing' && <Sprout className="text-[#8BC34A] animate-pulse" size={32} />}
-              {plot.state === 'ready' && <Wheat className="text-yellow-400 drop-shadow-md animate-bounce" size={40} />}
+      <div className="flex-1 flex flex-col items-center justify-center w-full max-w-[92vw] sm:max-w-md mx-auto z-0 pt-32 pb-28">
+        
+        <div className="relative w-full">
+          {!unlockedSoils.includes(currentSoil.id) && (
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm rounded-2xl border border-white/10">
+              <div className="text-white font-bold mb-2">未解锁土壤</div>
+              <div className="text-sm text-gray-300 mb-4">需要 Lv.{currentSoil.reqLevel}</div>
+              <button onClick={handleUnlockSoil} className="bg-yellow-500 text-white px-6 py-2 rounded-full font-bold shadow-lg hover:bg-yellow-400 active:scale-95 flex items-center gap-2">
+                解锁 <Coins size={16}/>{currentSoil.costG} {currentSoil.costD > 0 && <><Gem size={16}/>{currentSoil.costD}</>}
+              </button>
             </div>
-          ))}
+          )}
+
+          <div className={cn("grid grid-cols-4 gap-2 sm:gap-3 p-3 sm:p-4 bg-[#5D4037]/30 rounded-2xl backdrop-blur-sm border border-white/10 shadow-xl transition-opacity", !unlockedSoils.includes(currentSoil.id) && "opacity-30 pointer-events-none")}>
+            {plots.map((plot, i) => {
+              const plantSeed = ITEMS.seeds.find(s => s.id === plot.plantId);
+              return (
+                <div 
+                  key={i} 
+                  onClick={() => handlePlotClick(i)}
+                  className="aspect-square rounded-xl border-b-[6px] shadow-inner relative overflow-hidden cursor-pointer hover:brightness-110 active:border-b-2 active:translate-y-1 transition-all flex items-center justify-center"
+                  style={{ backgroundColor: currentSoil.color, borderColor: currentSoil.borderColor }}
+                >
+                  <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#3E2723 1.5px, transparent 1.5px)', backgroundSize: '8px 8px' }} />
+                  
+                  {/* Plant Visuals */}
+                  {plot.state === 'growing' && <Sprout className="text-[#8BC34A] animate-pulse" size={32} />}
+                  {plot.state === 'ready' && plantSeed && plantSeed.icon}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -411,6 +460,19 @@ export default function App() {
                 {/* Attributes Modal */}
                 {activeModal === 'attributes' && (
                   <div className="space-y-4 text-[#5D4037]">
+                    {/* Soil Selector in Attributes */}
+                    <div className="bg-[#8D6E63] p-3 rounded-xl shadow-sm flex flex-col gap-2">
+                      <span className="font-bold text-white border-b border-white/20 pb-2">土壤管理</span>
+                      <div className="flex items-center justify-between w-full bg-black/20 backdrop-blur-md rounded-full px-4 py-2 border border-white/10">
+                        <button onClick={handlePrevSoil} className="p-1 text-white hover:bg-white/20 rounded-full transition-colors"><ChevronLeft size={24} /></button>
+                        <div className="flex flex-col items-center">
+                          <span className="text-white font-bold text-sm drop-shadow-md">{currentSoil.name}</span>
+                          <span className="text-white/70 text-[10px]">生长速度 x{currentSoil.speedBonus}</span>
+                        </div>
+                        <button onClick={handleNextSoil} className="p-1 text-white hover:bg-white/20 rounded-full transition-colors"><ChevronRight size={24} /></button>
+                      </div>
+                    </div>
+
                     <div className="flex justify-between items-center bg-white p-3 rounded-xl shadow-sm">
                       <span className="font-bold">农场等级</span>
                       <span className="text-lg font-black text-[#8BC34A]">Lv.{stats.level}</span>
