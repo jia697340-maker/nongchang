@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Backpack, Droplets, Sprout, User, Settings, MessageCircle, Coins, Gem, Info, X, Wheat, Axe, Shield, Box, Sparkles, Dog, Map, Fence, Hammer, Flower2, TreePine, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { Backpack, Droplets, Sprout, User, Settings, MessageCircle, Coins, Gem, Info, X, Wheat, Axe, Shield, Box, Sparkles, Dog, Map, Fence, Hammer, Flower2, TreePine, ChevronLeft, ChevronRight, Palette, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -49,6 +49,13 @@ const SOILS = [
   { id: 'soil3', name: '神奇红土', color: '#D84315', borderColor: '#BF360C', speedBonus: 1.5, unlocked: false, costG: 2000, costD: 10, reqLevel: 10 },
 ];
 
+const THEMES = [
+  { id: 'default', name: '经典绿野', bg: '#E8F5E9', pattern: '#C8E6C9', soilBg: '#D7CCC8', soilBorder: '#BCAAA4', decor: 'none', avatarBorder: '#A5D6A7' },
+  { id: 'sakura', name: '粉白樱花', bg: '#FCE4EC', pattern: '#F8BBD0', soilBg: '#FFF3E0', soilBorder: '#FFCCBC', decor: 'flower', avatarBorder: '#F48FB1' },
+  { id: 'starry', name: '星空暗夜', bg: '#E8EAF6', pattern: '#C5CAE9', soilBg: '#CFD8DC', soilBorder: '#B0BEC5', decor: 'star', avatarBorder: '#9FA8DA' },
+  { id: 'autumn', name: '金秋落叶', bg: '#FFF8E1', pattern: '#FFECB3', soilBg: '#FFE0B2', soilBorder: '#FFCC80', decor: 'none', avatarBorder: '#FFE082' },
+];
+
 export default function App() {
   // --- STATE ---
   const [stats, setStats] = useState({ level: 5, exp: 1200, maxExp: 2000, gold: 500, diamond: 20 });
@@ -68,6 +75,15 @@ export default function App() {
   const [unlockedSoils, setUnlockedSoils] = useState<string[]>(['soil1']);
   const [currentSoilIndex, setCurrentSoilIndex] = useState(0);
   const currentSoil = SOILS[currentSoilIndex];
+  
+  // Theme & Beautification
+  const [activeThemeId, setActiveThemeId] = useState('default');
+  const [customTheme, setCustomTheme] = useState({ bg: '#F5F5F5', pattern: '#E0E0E0', soilBg: '#FAFAFA', soilBorder: '#EEEEEE', decor: 'none', avatarBorder: '#E0E0E0' });
+  const [attrTab, setAttrTab] = useState<'stats' | 'soil' | 'theme'>('stats');
+
+  const currentTheme = activeThemeId === 'custom' 
+    ? { id: 'custom', name: '自定义', ...customTheme } 
+    : THEMES.find(t => t.id === activeThemeId) || THEMES[0];
   
   // Chat & UI
   const [isChatting, setIsChatting] = useState(false);
@@ -281,22 +297,25 @@ export default function App() {
   };
 
   return (
-    <div className="relative w-full h-screen bg-[#8BC34A] overflow-hidden select-none font-sans flex flex-col">
+    <div className="relative w-full h-screen overflow-hidden select-none font-sans flex flex-col transition-colors duration-500" style={{ backgroundColor: currentTheme.bg }}>
       {/* Grass Pattern */}
       <div 
-        className="absolute inset-0 opacity-20 pointer-events-none" 
+        className="absolute inset-0 opacity-20 pointer-events-none transition-colors duration-500" 
         style={{ 
-          backgroundImage: 'radial-gradient(#558B2F 2px, transparent 2px)', 
+          backgroundImage: `radial-gradient(${currentTheme.pattern} 2px, transparent 2px)`, 
           backgroundSize: '24px 24px' 
         }}
       />
+      
+      {/* Decor Overlay */}
+      {(currentTheme.decor === 'flower' || currentTheme.decor === 'star') && <DecorOverlay type={currentTheme.decor} />}
 
       {/* Top Bar: Couple Profiles & Currency */}
       <div className="absolute top-0 left-0 w-full p-4 sm:p-6 flex justify-between items-start z-10 pt-safe pointer-events-none">
         {/* User 1 (Left) */}
         <div className="relative flex flex-col items-start gap-2 pointer-events-auto">
           <div className="flex items-center gap-2 bg-black/20 backdrop-blur-md p-1.5 pr-4 rounded-full border border-white/20 shadow-sm w-40">
-            <div className="w-10 h-10 shrink-0 rounded-full bg-white/40 border-2 border-[#8BC34A] shadow-sm flex items-center justify-center overflow-hidden">
+            <div className="w-10 h-10 shrink-0 rounded-full bg-white/40 border-2 shadow-sm flex items-center justify-center overflow-hidden transition-colors duration-500" style={{ borderColor: currentTheme.avatarBorder }}>
               <img src="https://picsum.photos/seed/user1/100/100" alt="User 1" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
             </div>
             <div className="flex flex-col justify-center flex-1">
@@ -331,7 +350,7 @@ export default function App() {
              </div>
           </div>
           <div className="flex items-center gap-2 flex-row-reverse bg-black/20 backdrop-blur-md p-1.5 pl-4 rounded-full border border-white/20 shadow-sm w-40 mt-1">
-            <div className="w-10 h-10 shrink-0 rounded-full bg-white/30 border-2 border-[#8BC34A] shadow-sm flex items-center justify-center overflow-hidden">
+            <div className="w-10 h-10 shrink-0 rounded-full bg-white/30 border-2 shadow-sm flex items-center justify-center overflow-hidden transition-colors duration-500" style={{ borderColor: currentTheme.avatarBorder }}>
               <img src="https://picsum.photos/seed/user2/100/100" alt="User 2" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
             </div>
             <div className="flex flex-col justify-center items-end flex-1">
@@ -358,17 +377,17 @@ export default function App() {
             </div>
           )}
 
-          <div className={cn("grid grid-cols-4 gap-2 sm:gap-3 p-3 sm:p-4 bg-[#5D4037]/30 rounded-2xl backdrop-blur-sm border border-white/10 shadow-xl transition-opacity", !unlockedSoils.includes(currentSoil.id) && "opacity-30 pointer-events-none")}>
+          <div className={cn("grid grid-cols-4 gap-2 sm:gap-3 p-3 sm:p-4 rounded-2xl backdrop-blur-sm shadow-xl transition-all duration-500", !unlockedSoils.includes(currentSoil.id) && "opacity-30 pointer-events-none")} style={{ backgroundColor: `${currentTheme.soilBorder}80`, border: `1px solid ${currentTheme.soilBorder}` }}>
             {plots.map((plot, i) => {
               const plantSeed = ITEMS.seeds.find(s => s.id === plot.plantId);
               return (
                 <div 
                   key={i} 
                   onClick={() => handlePlotClick(i)}
-                  className="aspect-square rounded-xl border-b-[6px] shadow-inner relative overflow-hidden cursor-pointer hover:brightness-110 active:border-b-2 active:translate-y-1 transition-all flex items-center justify-center"
-                  style={{ backgroundColor: currentSoil.color, borderColor: currentSoil.borderColor }}
+                  className="aspect-square rounded-xl border-b-[6px] shadow-inner relative overflow-hidden cursor-pointer hover:brightness-110 active:border-b-2 active:translate-y-1 transition-all duration-500 flex items-center justify-center"
+                  style={{ backgroundColor: currentTheme.soilBg, borderColor: currentTheme.soilBorder }}
                 >
-                  <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#3E2723 1.5px, transparent 1.5px)', backgroundSize: '8px 8px' }} />
+                  <div className="absolute inset-0 opacity-10 pointer-events-none transition-colors duration-500" style={{ backgroundImage: `radial-gradient(${currentTheme.soilBorder} 1.5px, transparent 1.5px)`, backgroundSize: '8px 8px' }} />
                   
                   {/* Plant Visuals */}
                   {plot.state === 'growing' && <Sprout className="text-[#8BC34A] animate-pulse" size={32} />}
@@ -459,44 +478,149 @@ export default function App() {
                 
                 {/* Attributes Modal */}
                 {activeModal === 'attributes' && (
-                  <div className="space-y-4 text-[#5D4037]">
-                    {/* Soil Selector in Attributes */}
-                    <div className="bg-[#8D6E63] p-3 rounded-xl shadow-sm flex flex-col gap-2">
-                      <span className="font-bold text-white border-b border-white/20 pb-2">土壤管理</span>
-                      <div className="flex items-center justify-between w-full bg-black/20 backdrop-blur-md rounded-full px-4 py-2 border border-white/10">
-                        <button onClick={handlePrevSoil} className="p-1 text-white hover:bg-white/20 rounded-full transition-colors"><ChevronLeft size={24} /></button>
-                        <div className="flex flex-col items-center">
-                          <span className="text-white font-bold text-sm drop-shadow-md">{currentSoil.name}</span>
-                          <span className="text-white/70 text-[10px]">生长速度 x{currentSoil.speedBonus}</span>
-                        </div>
-                        <button onClick={handleNextSoil} className="p-1 text-white hover:bg-white/20 rounded-full transition-colors"><ChevronRight size={24} /></button>
-                      </div>
+                  <div className="flex flex-col h-full">
+                    {/* Tabs */}
+                    <div className="flex gap-2 mb-4 border-b border-gray-200 pb-2">
+                      <button onClick={() => setAttrTab('stats')} className={cn("px-3 py-1.5 rounded-full text-sm font-bold transition-colors", attrTab === 'stats' ? "bg-[#8BC34A] text-white" : "text-gray-500 hover:bg-gray-100")}>属性</button>
+                      <button onClick={() => setAttrTab('soil')} className={cn("px-3 py-1.5 rounded-full text-sm font-bold transition-colors", attrTab === 'soil' ? "bg-[#8BC34A] text-white" : "text-gray-500 hover:bg-gray-100")}>土壤</button>
+                      <button onClick={() => setAttrTab('theme')} className={cn("px-3 py-1.5 rounded-full text-sm font-bold transition-colors", attrTab === 'theme' ? "bg-[#8BC34A] text-white" : "text-gray-500 hover:bg-gray-100")}>美化</button>
                     </div>
 
-                    <div className="flex justify-between items-center bg-white p-3 rounded-xl shadow-sm">
-                      <span className="font-bold">农场等级</span>
-                      <span className="text-lg font-black text-[#8BC34A]">Lv.{stats.level}</span>
-                    </div>
-                    <div className="flex justify-between items-center bg-white p-3 rounded-xl shadow-sm">
-                      <span className="font-bold">当前经验</span>
-                      <span>{stats.exp} / {stats.maxExp}</span>
-                    </div>
-                    <div className="flex justify-between items-center bg-white p-3 rounded-xl shadow-sm">
-                      <span className="font-bold">拥有金币</span>
-                      <span className="flex items-center gap-1 text-yellow-500 font-bold"><Coins size={16}/> {stats.gold}</span>
-                    </div>
-                    <div className="flex justify-between items-center bg-white p-3 rounded-xl shadow-sm">
-                      <span className="font-bold">拥有钻石</span>
-                      <span className="flex items-center gap-1 text-cyan-500 font-bold"><Gem size={16}/> {stats.diamond}</span>
-                    </div>
-                    <div className="bg-white p-3 rounded-xl shadow-sm">
-                      <span className="font-bold block mb-2 border-b pb-2">加成属性</span>
-                      <ul className="text-sm space-y-2 text-gray-600">
-                        <li>• 基础生长速度: +5%</li>
-                        <li>• 伴侣亲密度加成: +10% 产量</li>
-                        <li>• 默认水壶加成: 无</li>
-                        <li>• 默认肥料加成: 无</li>
-                      </ul>
+                    <div className="space-y-4 text-[#5D4037] overflow-y-auto pb-4">
+                      {attrTab === 'stats' && (
+                        <>
+                          <div className="flex justify-between items-center bg-white p-3 rounded-xl shadow-sm">
+                            <span className="font-bold">农场等级</span>
+                            <span className="text-lg font-black text-[#8BC34A]">Lv.{stats.level}</span>
+                          </div>
+                          <div className="flex justify-between items-center bg-white p-3 rounded-xl shadow-sm">
+                            <span className="font-bold">当前经验</span>
+                            <span>{stats.exp} / {stats.maxExp}</span>
+                          </div>
+                          <div className="flex justify-between items-center bg-white p-3 rounded-xl shadow-sm">
+                            <span className="font-bold">拥有金币</span>
+                            <span className="flex items-center gap-1 text-yellow-500 font-bold"><Coins size={16}/> {stats.gold}</span>
+                          </div>
+                          <div className="flex justify-between items-center bg-white p-3 rounded-xl shadow-sm">
+                            <span className="font-bold">拥有钻石</span>
+                            <span className="flex items-center gap-1 text-cyan-500 font-bold"><Gem size={16}/> {stats.diamond}</span>
+                          </div>
+                          <div className="bg-white p-3 rounded-xl shadow-sm">
+                            <span className="font-bold block mb-2 border-b pb-2">加成属性</span>
+                            <ul className="text-sm space-y-2 text-gray-600">
+                              <li>• 基础生长速度: +5%</li>
+                              <li>• 伴侣亲密度加成: +10% 产量</li>
+                              <li>• 默认水壶加成: 无</li>
+                              <li>• 默认肥料加成: 无</li>
+                            </ul>
+                          </div>
+                        </>
+                      )}
+
+                      {attrTab === 'soil' && (
+                        <div className="bg-[#8D6E63] p-4 rounded-xl shadow-sm flex flex-col gap-4">
+                          <div className="flex items-center justify-between w-full bg-black/20 backdrop-blur-md rounded-full px-4 py-2 border border-white/10">
+                            <button onClick={handlePrevSoil} className="p-1 text-white hover:bg-white/20 rounded-full transition-colors"><ChevronLeft size={24} /></button>
+                            <div className="flex flex-col items-center">
+                              <span className="text-white font-bold text-lg drop-shadow-md">{currentSoil.name}</span>
+                              <span className="text-white/80 text-xs mt-1">生长速度 x{currentSoil.speedBonus}</span>
+                            </div>
+                            <button onClick={handleNextSoil} className="p-1 text-white hover:bg-white/20 rounded-full transition-colors"><ChevronRight size={24} /></button>
+                          </div>
+                          
+                          <div className="bg-white/10 rounded-xl p-3 text-white text-sm">
+                            <p className="mb-2"><strong>当前状态:</strong> {unlockedSoils.includes(currentSoil.id) ? '已解锁' : '未解锁'}</p>
+                            {!unlockedSoils.includes(currentSoil.id) && (
+                              <p className="text-yellow-200 text-xs">解锁条件: 农场 Lv.{currentSoil.reqLevel}, {currentSoil.costG} 金币 {currentSoil.costD > 0 && `, ${currentSoil.costD} 钻石`}</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {attrTab === 'theme' && (
+                        <div className="flex flex-col gap-4">
+                          <div className="grid grid-cols-2 gap-3">
+                            {THEMES.filter(t => t.id !== 'custom').map(theme => (
+                              <button 
+                                key={theme.id}
+                                onClick={() => setActiveThemeId(theme.id)}
+                                className={cn("p-3 rounded-xl border-2 flex flex-col items-center gap-2 transition-all", activeThemeId === theme.id ? "border-[#8BC34A] bg-[#8BC34A]/10" : "border-gray-200 bg-white hover:bg-gray-50")}
+                              >
+                                <div className="w-full h-16 rounded-lg relative overflow-hidden shadow-inner" style={{ backgroundColor: theme.bg }}>
+                                  <div className="absolute inset-0 opacity-20" style={{ backgroundImage: `radial-gradient(${theme.pattern} 2px, transparent 2px)`, backgroundSize: '8px 8px' }} />
+                                  <div className="absolute bottom-2 right-2 w-8 h-8 rounded-md border-b-4 shadow-sm" style={{ backgroundColor: theme.soilBg, borderColor: theme.soilBorder }} />
+                                  <div className="absolute top-2 right-2 w-6 h-6 rounded-full border-2 bg-white/40" style={{ borderColor: theme.avatarBorder }} />
+                                  {theme.decor === 'flower' && <Flower2 size={12} className="absolute top-2 left-2 text-pink-400 opacity-60" />}
+                                  {theme.decor === 'star' && <Star size={12} className="absolute top-2 left-2 text-yellow-300 opacity-60" />}
+                                </div>
+                                <span className="text-sm font-bold text-gray-700">{theme.name}</span>
+                              </button>
+                            ))}
+                          </div>
+
+                          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                            <div className="flex items-center justify-between mb-4 border-b pb-2">
+                              <span className="font-bold text-gray-700 flex items-center gap-2"><Palette size={18}/> 自定义配色</span>
+                              <button 
+                                onClick={() => setActiveThemeId('custom')}
+                                className={cn("px-3 py-1 rounded-full text-xs font-bold transition-all", activeThemeId === 'custom' ? "bg-[#8BC34A] text-white shadow-md" : "bg-gray-100 text-gray-500 hover:bg-gray-200")}
+                              >
+                                使用自定义
+                              </button>
+                            </div>
+                            
+                            <div className={cn("space-y-3 transition-opacity", activeThemeId !== 'custom' && "opacity-50 pointer-events-none")}>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium text-gray-600">草地背景</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-gray-400 uppercase w-16 text-right">{customTheme.bg}</span>
+                                  <input type="color" value={customTheme.bg} onChange={(e) => setCustomTheme(p => ({...p, bg: e.target.value}))} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium text-gray-600">草地斑点</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-gray-400 uppercase w-16 text-right">{customTheme.pattern}</span>
+                                  <input type="color" value={customTheme.pattern} onChange={(e) => setCustomTheme(p => ({...p, pattern: e.target.value}))} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium text-gray-600">土壤表面</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-gray-400 uppercase w-16 text-right">{customTheme.soilBg}</span>
+                                  <input type="color" value={customTheme.soilBg} onChange={(e) => setCustomTheme(p => ({...p, soilBg: e.target.value}))} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium text-gray-600">土壤边缘</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-gray-400 uppercase w-16 text-right">{customTheme.soilBorder}</span>
+                                  <input type="color" value={customTheme.soilBorder} onChange={(e) => setCustomTheme(p => ({...p, soilBorder: e.target.value}))} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium text-gray-600">头像边框</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-gray-400 uppercase w-16 text-right">{customTheme.avatarBorder}</span>
+                                  <input type="color" value={customTheme.avatarBorder} onChange={(e) => setCustomTheme(p => ({...p, avatarBorder: e.target.value}))} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between pt-2 border-t">
+                                <span className="text-sm font-medium text-gray-600">装饰物</span>
+                                <select 
+                                  value={customTheme.decor} 
+                                  onChange={(e) => setCustomTheme(p => ({...p, decor: e.target.value}))}
+                                  className="text-sm border border-gray-300 rounded-md px-2 py-1 outline-none focus:border-[#8BC34A] bg-white"
+                                >
+                                  <option value="none">无</option>
+                                  <option value="flower">小花</option>
+                                  <option value="star">星星</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -585,6 +709,36 @@ export default function App() {
 }
 
 // --- SUBCOMPONENTS ---
+
+function DecorOverlay({ type }: { type: string }) {
+  const decors = useMemo(() => {
+    return Array.from({ length: 24 }).map((_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      scale: 0.5 + Math.random() * 0.8,
+      rotation: Math.random() * 360,
+      delay: Math.random() * 2
+    }));
+  }, [type]);
+
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+      {decors.map(d => (
+        <motion.div 
+          key={d.id} 
+          className="absolute" 
+          style={{ left: d.left, top: d.top, transform: `scale(${d.scale}) rotate(${d.rotation}deg)` }}
+          animate={{ y: [0, -10, 0], rotate: [d.rotation, d.rotation + 10, d.rotation] }}
+          transition={{ duration: 3 + d.delay, repeat: Infinity, ease: "easeInOut" }}
+        >
+          {type === 'flower' && <Flower2 size={20} className="text-pink-300 opacity-60 drop-shadow-sm" />}
+          {type === 'star' && <Star size={20} className="text-yellow-200 opacity-60 drop-shadow-sm" fill="currentColor" />}
+        </motion.div>
+      ))}
+    </div>
+  );
+}
 
 function ToolButton({ icon, label, onClick, isActive }: { icon: React.ReactNode, label: string, onClick?: () => void, isActive?: boolean }) {
   return (
